@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicDuty Terminal v4.1 - Speak. Serve. Be Heard.</title>
+    <title>CivicDuty Terminal v4.5 - Unified Node</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @keyframes pulseDot { 0%, 100% { opacity: 0.3; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } }
@@ -40,23 +40,22 @@
     </div>
 
     <script>
-        // --- IMMUTABLE MULTI-TENANT DICTIONARY CORE ---
+        // --- MULTI-TENANT DICTIONARY CORE ---
         const TENANT_MATRIX = {
-            "UG": { name: "Uganda", struct: "Ministry / Authority", tag: "UG_NODE_01", defaultSla: 48 },
-            "KE": { name: "Kenya", struct: "Ministry / State Dept", tag: "KE_NODE_02", defaultSla: 48 },
-            "NG": { name: "Nigeria", struct: "Federal Department", tag: "NG_NODE_05", defaultSla: 48 }
+            "UG": { name: "Uganda", struct: "Ministry / Authority", tag: "UG_NODE_01" },
+            "KE": { name: "Kenya", struct: "Ministry / State Dept", tag: "KE_NODE_02" },
+            "NG": { name: "Nigeria", struct: "Federal Department", tag: "NG_NODE_05" }
         };
 
         const DEPARTMENT_WALLS = [
             { id: 'nwsc', country_id: 'UG', name: "National Water & Sewerage Corp", icon: "💧" },
-            { id: 'unra', country_id: 'UG', name: "National Roads Authority (UNRA)", icon: "🛣️" },
+            { id: 'unra', country_id: 'UG', name: "National Roads Authority (UNRA)", icon: "¼️" },
             { id: 'kcca', country_id: 'UG', name: "Kampala Capital City Authority", icon: "🏛️" },
             { id: 'umeme', country_id: 'UG', name: "Umeme Power Grid", icon: "⚡" },
-            { id: 'kplc', country_id: 'KE', name: "Kenya Power (KPLC)", icon: "⚡" },
-            { id: 'nira', country_id: 'UG', name: "National Identification Authority", icon: "🪪" }
+            { id: 'kplc', country_id: 'KE', name: "Kenya Power (KPLC)", icon: "⚡" }
         ];
 
-        // --- IN-MEMORY REPLICATED SUPABASE TABLES ---
+        // --- MOCK IN-MEMORY DATA STORAGE ---
         let db_profiles = {}; 
         let db_tickets = [
             {
@@ -64,54 +63,36 @@
                 country_id: "UG",
                 dept_id: "nwsc",
                 citizen_name: "Sovereign Watchdog",
-                source: "App",
-                title: "Main Street Water Pipe Burst",
-                caption: "Water pressure has completely cracked the sidewalk asphalt here. Flooding local shops.",
-                location_name: "Banda, Kampala",
-                media_payloads: ["https://images.unsplash.com/photo-1542044896530-05d85be9b11a?w=400"],
+                title: "Main Street Water Main Burst",
+                caption: "Water pressure has completely destroyed the sidewalk asphalt here. Flooding houses.",
+                location_name: "Sector 4",
                 status: "Pending",
                 created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), 
-                sla_expires_at: new Date(Date.now() + 46 * 60 * 60 * 1000).toISOString(),
-                citizen_satisfaction: null,
                 comments: []
+            },
+            {
+                id: "tkt-102",
+                country_id: "UG",
+                dept_id: "umeme",
+                citizen_name: "Grid Watcher",
+                title: "Grid Transformer Blown",
+                caption: "Loud explosion heard near the ring road substation. Entire area out of power.",
+                location_name: "Kisenyi Ring Rd",
+                status: "Resolved",
+                created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), 
+                comments: [{
+                    sender: "NWSC Engineering Hub",
+                    role: "government",
+                    msg: "Emergency response team dispatched. Repaired broken valve line and cleared the asphalt debris. Service restored."
+                }]
             }
         ];
 
-        // --- AUTHENTICATED STATE REFLECTORS ---
         let sessionUser = null; 
         let activeView = 'gateway'; 
-        let selectedUploadMedia = null;
         let selectedTicketContextId = null;
 
-        // --- BACKEND PROCESS AUTOMATION ENGINE ---
-        function trigger_process_ticket_xp_allocation(ticket) {
-            let user = db_profiles[ticket.citizen_id];
-            if (!user) return;
-
-            let xp_gain = 50; 
-            if (ticket.media_payloads && ticket.media_payloads.length > 0) {
-                xp_gain += 100; 
-            }
-
-            user.xp_score += xp_gain;
-
-            if (user.xp_score >= 5000 && user.resolved_count >= 20) user.current_rank = 'Pioneer';
-            else if (user.xp_score >= 1500) user.current_rank = 'Sentinel';
-            else if (user.xp_score >= 500 && user.resolved_count >= 5) user.current_rank = 'Watchdog';
-            else user.current_rank = 'Citizen';
-        }
-
-        function calculateSlaTimeRemaining(expiryStr) {
-            const diff = new Date(expiryStr) - new Date();
-            if (diff <= 0) return "00h 00m 00s (SLA Missed)";
-            const hrs = Math.floor(diff / (1000 * 60 * 60));
-            const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-            return `${hrs.toString().padStart(2, '0')}h ${mins.toString().padStart(2, '0')}m left`;
-        }
-
-        // ==========================================
-        //         ROUTING AND VIEWPORT CONTROLLER
-        // ==========================================
+        // --- NAVIGATION ROUTER ---
         function routeTo(targetView) {
             activeView = targetView;
             const h = document.getElementById('global-header');
@@ -144,22 +125,22 @@
             if (sessionUser.role === 'government') {
                 nav.innerHTML = `
                     <button onclick="routeTo('gov_dashboard')" class="flex flex-col items-center gap-0.5 text-amber-400">
-                        <span class="text-lg">📥</span><span class="text-[9px] font-mono tracking-tight font-bold">Inbox Queue</span>
+                        <span class="text-base">📥</span><span class="text-[9px] font-mono tracking-tight font-bold">Resolution Hub</span>
                     </button>
-                    <button onclick="routeTo('gateway')" class="flex flex-col items-center gap-0.5 text-zinc-600 hover:text-red-400">
-                        <span class="text-lg">🚪</span><span class="text-[9px] font-mono">Disconnect</span>
+                    <button onclick="sessionUser=null; routeTo('gateway')" class="flex flex-col items-center gap-0.5 text-zinc-600 hover:text-red-400">
+                        <span class="text-base">🚪</span><span class="text-[9px] font-mono">Exit Node</span>
                     </button>
                 `;
             } else {
                 nav.innerHTML = `
                     <button onclick="routeTo('citizen_timeline')" class="flex flex-col items-center gap-0.5 ${activeView === 'citizen_timeline' ? 'text-emerald-400' : 'text-zinc-500'}">
-                        <span class="text-lg">📋</span><span class="text-[9px] font-mono font-bold">Registry</span>
+                        <span class="text-base">🛡️</span><span class="text-[9px] font-mono font-bold">Registry</span>
                     </button>
                     <button onclick="routeTo('citizen_report')" class="flex flex-col items-center gap-0.5 ${activeView === 'citizen_report' ? 'text-emerald-400' : 'text-zinc-500'}">
-                        <span class="text-lg">➕</span><span class="text-[9px] font-mono font-bold">Speak</span>
+                        <span class="text-base">➕</span><span class="text-[9px] font-mono font-bold">File Ticket</span>
                     </button>
                     <button onclick="routeTo('citizen_profile_view')" class="flex flex-col items-center gap-0.5 ${activeView === 'citizen_profile_view' ? 'text-emerald-400' : 'text-zinc-500'}">
-                        <span class="text-lg">👤</span><span class="text-[9px] font-mono font-bold">Profile</span>
+                        <span class="text-base">👤</span><span class="text-[9px] font-mono font-bold">Identity</span>
                     </button>
                 `;
             }
@@ -184,43 +165,38 @@
             }
         }
 
-        // ==========================================
-        //          VIEW GENERATORS ENGINE RENDERERS
-        // ==========================================
-
+        // --- COMPONENT VIEW GENERATORS ---
         function renderGatewayView(container) {
             container.innerHTML = `
-                <div class="space-y-8 pt-12 pb-4 text-center">
+                <div class="space-y-8 pt-16 pb-4 text-center">
                     <div class="space-y-1 relative inline-block mx-auto">
                         <h2 class="text-3xl font-black tracking-tighter text-zinc-100 uppercase select-none">CIVICDUTY</h2>
                         <div class="absolute -top-1.5 -right-3 w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981] animate-pulseDot"></div>
                     </div>
-                    <div class="text-[10px] bg-zinc-900/60 border border-zinc-800 rounded-full px-3 py-1 w-fit mx-auto text-zinc-400 font-mono">
-                        System Live • Multi-Node Active
-                    </div>
+                    <p class="text-xs text-zinc-500 max-w-xs mx-auto -mt-4">Decentralized infrastructure reporting and cross-border government accountability routing.</p>
 
-                    <div class="space-y-4 pt-4 text-left">
+                    <div class="space-y-3 pt-6 text-left">
                         <div onclick="routeTo('citizen_auth')" class="cursor-pointer bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-800 p-5 rounded-2xl transition-all flex justify-between items-center group">
                             <div class="space-y-1">
-                                <span class="text-sm font-bold text-zinc-200 block uppercase tracking-wide">Citizen Portal | Speak</span>
-                                <span class="text-xs text-zinc-500 block">Verify Node Location. Report issues. Track SLAs.</span>
+                                <span class="text-sm font-bold text-zinc-200 block uppercase tracking-wide">Citizen Terminal Entry</span>
+                                <span class="text-xs text-zinc-500 block">Verify identity node. Report issues. Track updates.</span>
                             </div>
-                            <span class="text-zinc-600 group-hover:text-emerald-400 transition-colors text-lg font-black">➔</span>
+                            <span class="text-zinc-600 group-hover:text-emerald-400 transition-colors font-black">➔</span>
                         </div>
 
                         <div onclick="routeTo('gov_auth')" class="cursor-pointer bg-zinc-900/40 hover:bg-zinc-900 border border-zinc-800 p-5 rounded-2xl transition-all flex justify-between items-center group">
                             <div class="space-y-1">
-                                <span class="text-sm font-bold text-amber-400 block uppercase tracking-wide">Government Desk | Serve</span>
-                                <span class="text-xs text-zinc-500 block">Administrative credentials portal.</span>
+                                <span class="text-sm font-bold text-amber-400 block uppercase tracking-wide">Government Operations Desk</span>
+                                <span class="text-xs text-zinc-500 block">Administrative authorization gateway for department seats.</span>
                             </div>
-                            <span class="text-zinc-600 group-hover:text-amber-400 transition-colors text-lg font-black">➔</span>
+                            <span class="text-zinc-600 group-hover:text-amber-400 transition-colors font-black">➔</span>
                         </div>
                     </div>
 
-                    <div class="pt-2 border-t border-zinc-900">
+                    <div class="pt-6 border-t border-zinc-900/60">
                         <div onclick="routeTo('properhaze_link')" class="cursor-pointer bg-purple-950/10 hover:bg-purple-950/20 border border-purple-900/30 p-4 rounded-xl text-center transition-all">
-                            <span class="text-xs font-bold text-purple-400">🔗 Properhaze Platform Link Settings</span>
-                            <p class="text-[10px] text-zinc-500 mt-1">Configure profile visibility settings & discovery states.</p>
+                            <span class="text-xs font-bold text-purple-400">🔗 Properhaze Identity & Visibility Controls</span>
+                            <p class="text-[10px] text-zinc-500 mt-1">Configure systemic biometric discovery and search parameters.</p>
                         </div>
                     </div>
                 </div>
@@ -232,8 +208,8 @@
                 <div class="space-y-5 pt-2">
                     <span onclick="routeTo('gateway')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Gate Desk</span>
                     <div>
-                        <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">Sovereign Identity Setup</h3>
-                        <p class="text-xs text-zinc-400 mt-0.5">Map access configurations to regional digital resolution networks.</p>
+                        <h3 class="text-lg font-black tracking-tight text-zinc-100 uppercase">Establish Sovereign Identity</h3>
+                        <p class="text-xs text-zinc-400 mt-0.5">Verify identity credentials to map your access point.</p>
                     </div>
 
                     <div class="space-y-4 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-900">
@@ -245,8 +221,8 @@
                         </label>
 
                         <label class="block space-y-1.5">
-                            <span class="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Identity Token Input</span>
-                            <input id="auth-nin" type="text" placeholder="Enter alphanumeric code verification..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:outline-none font-mono" />
+                            <span class="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">National Identity Code (NIN/ID)</span>
+                            <input id="auth-nin" type="text" placeholder="Enter identification code sequence..." class="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs text-zinc-200 focus:outline-none font-mono" />
                         </label>
                     </div>
 
@@ -260,7 +236,7 @@
         function actionExecuteCitizenLogin() {
             const country = document.getElementById('auth-country').value;
             const nin = document.getElementById('auth-nin').value.trim();
-            if (!nin) return alert("Identification context parameter missing.");
+            if (!nin) return alert("Identification credentials mandatory.");
 
             const generatedUuid = "usr-" + Math.floor(Math.random() * 90000 + 10000);
             if (!db_profiles[generatedUuid]) {
@@ -268,9 +244,9 @@
                     id: generatedUuid,
                     country_id: country,
                     full_name: "Watchdog " + nin.slice(0, 4).toUpperCase(),
-                    xp_score: 0,
-                    current_rank: "Citizen",
-                    resolved_count: 0
+                    xp_score: 120,
+                    current_rank: "Sentinel",
+                    resolved_count: 3
                 };
             }
 
@@ -288,7 +264,7 @@
                 <div class="space-y-5 pt-2">
                     <span onclick="routeTo('gateway')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Return</span>
                     <div>
-                        <h3 class="text-lg font-black tracking-tight text-amber-400 uppercase">Department Terminal Access</h3>
+                        <h3 class="text-lg font-black tracking-tight text-amber-400 uppercase">Department Authorization Seat</h3>
                     </div>
 
                     <div class="space-y-4 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-900">
@@ -301,7 +277,7 @@
                     </div>
 
                     <button onclick="actionExecuteGovLogin()" class="w-full bg-amber-500 hover:bg-amber-400 text-zinc-950 font-black rounded-xl py-3.5 text-xs uppercase tracking-wider transition-all">
-                        Mount Verified Session
+                        Mount Verified Desk Session
                     </button>
                 </div>
             `;
@@ -324,66 +300,55 @@
                 <div class="space-y-5 pt-2">
                     <span onclick="routeTo('gateway')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Return</span>
                     <div>
-                        <h3 class="text-lg font-black tracking-tight text-purple-400 uppercase">Properhaze Core Integrations</h3>
+                        <h3 class="text-lg font-black tracking-tight text-purple-400 uppercase">Properhaze Integration Matrix</h3>
                     </div>
 
-                    <div class="bg-purple-950/10 border border-purple-900/30 p-4 rounded-xl space-y-2 text-xs leading-relaxed text-zinc-300">
-                        <p><strong>Visibility Guardrail Settings:</strong> Only individuals signed up to Properhaze and who have accepted public facial recognition in the privacy section can be visible when scanned. Those who haven't accepted will not be matched when scanned and can only be found through a name search via the search bar.</p>
+                    <div class="bg-purple-950/10 border border-purple-900/30 p-4 rounded-xl space-y-2 text-xs text-zinc-300 leading-relaxed">
+                        <p><strong>Visibility Guardrail Rule:</strong> Only individuals registered to Properhaze who have accepted public facial matching in their privacy controls are visible when automatically scanned. Others will be protected from digital matching layers and remain lookup-only via manual bar entry.</p>
                     </div>
 
                     <div class="bg-zinc-900/50 border border-zinc-900 p-4 rounded-xl flex items-center justify-between">
                         <div>
-                            <span class="text-xs font-bold text-zinc-200 block">Accept Public Biometric Discovery</span>
-                            <span class="text-[10px] text-zinc-500 block">Allow automated match sequences across registries.</span>
+                            <span class="text-xs font-bold text-zinc-200 block">Public Biometric Discovery Token</span>
+                            <span class="text-[10px] text-zinc-500 block">Allow automated matching metrics across verification loops.</span>
                         </div>
-                        <input type="checkbox" id="ph-biometric-toggle" class="w-4 h-4 rounded bg-zinc-900 border-zinc-800 text-purple-500 focus:ring-0" />
+                        <input type="checkbox" checked class="w-4 h-4 rounded bg-zinc-900 border-zinc-800 text-purple-500 focus:ring-0" />
                     </div>
 
-                    <button onclick="alert('Properhaze synchronization configurations saved successfully.'); routeTo('gateway');" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black rounded-xl py-3 text-xs uppercase tracking-wider transition-all">
-                        Save Configuration Matrix
+                    <button onclick="alert('Properhaze integration constraints sync\'d.'); routeTo('gateway');" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-black rounded-xl py-3 text-xs uppercase tracking-wider transition-all">
+                        Commit Configurations
                     </button>
                 </div>
             `;
         }
 
         function renderCitizenTimelineView(container) {
-            const isolatedTickets = db_tickets.filter(t => t.country_id === sessionUser.country_id);
+            const localTickets = db_tickets.filter(t => t.country_id === sessionUser.country_id);
             let html = `
-                <div class="bg-zinc-900/40 border border-zinc-900 p-3 rounded-xl flex items-center justify-between text-[10px] font-mono text-zinc-400">
-                    <span>📡 Stream Trackers Online: <strong class="text-emerald-400">${sessionUser.nodeTag}</strong></span>
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulseDot"></span>
-                </div>
-                <div class="space-y-4 pt-1">
+                <div class="text-xs font-bold tracking-tight text-zinc-400 uppercase px-0.5">Active Resolution Logs</div>
+                <div class="space-y-3">
             `;
 
-            if (isolatedTickets.length === 0) {
-                html += `<div class="text-center py-12 text-xs text-zinc-600 italic">No public logs uploaded inside this stream directory code path.</div>`;
+            if (localTickets.length === 0) {
+                html += `<div class="text-center py-12 text-xs text-zinc-600 italic">No public logs inside this regional matrix code path.</div>`;
             } else {
-                isolatedTickets.forEach(t => {
-                    const matchedDept = DEPARTMENT_WALLS.find(d => d.id === t.dept_id) || { name: t.dept_id, icon: "🏛️" };
-                    let statusColor = t.status === 'Resolved' ? "text-emerald-400 bg-emerald-400/10 border-emerald-500/20" : "text-amber-400 bg-amber-400/10 border-amber-500/20";
+                localTickets.forEach(t => {
+                    const dept = DEPARTMENT_WALLS.find(d => d.id === t.dept_id) || { name: t.dept_id, icon: "🏛️" };
+                    let badgeClass = t.status === 'Resolved' ? "text-emerald-400 bg-emerald-400/10 border-emerald-500/20" : "text-amber-400 bg-amber-400/10 border-amber-500/20";
 
                     html += `
-                        <div onclick="selectedTicketContextId='${t.id}'; routeTo('ticket_detail');" class="bg-zinc-900/20 border-b border-zinc-900 pb-4 pt-1 space-y-2.5 cursor-pointer hover:bg-zinc-900/10 transition-all">
-                            <div class="flex items-start gap-3">
-                                <div class="w-9 h-9 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-sm shrink-0">
-                                    ${matchedDept.icon}
+                        <div onclick="selectedTicketContextId='${t.id}'; routeTo('ticket_detail');" class="bg-zinc-900/30 border border-zinc-900 p-4 rounded-xl space-y-3 cursor-pointer hover:bg-zinc-900/50 transition-all">
+                            <div class="flex justify-between items-start gap-2">
+                                <div>
+                                    <h4 class="font-black text-sm text-zinc-200 tracking-tight">${t.title}</h4>
+                                    <span class="text-[10px] text-zinc-500 font-mono block mt-0.5">${dept.icon} ${dept.name}</span>
                                 </div>
-                                <div class="flex-1 space-y-1">
-                                    <div class="flex justify-between items-center gap-2">
-                                        <div>
-                                            <span class="font-black text-xs text-zinc-200 tracking-tight block">${matchedDept.name}</span>
-                                            <span class="text-[9px] text-zinc-500 font-mono block">filed by ${t.citizen_name}</span>
-                                        </div>
-                                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded border uppercase ${statusColor}">${t.status}</span>
-                                    </div>
-                                    <h4 class="font-bold text-xs text-zinc-200 pt-1">${t.title}</h4>
-                                    <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${t.caption}</p>
-                                    <div class="flex items-center justify-between text-[9px] font-mono text-zinc-500 pt-2">
-                                        <span>📍 ${t.location_name}</span>
-                                        <span class="text-zinc-400 font-bold">${calculateSlaTimeRemaining(t.sla_expires_at)}</span>
-                                    </div>
-                                </div>
+                                <span class="text-[8px] font-mono px-1.5 py-0.5 rounded border uppercase shrink-0 ${badgeClass}">${t.status}</span>
+                            </div>
+                            <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${t.caption}</p>
+                            <div class="flex items-center justify-between text-[9px] font-mono text-zinc-500 pt-1 border-t border-zinc-900/50">
+                                <span>📍 ${t.location_name}</span>
+                                <span>⏱️ 2h ago</span>
                             </div>
                         </div>
                     `;
@@ -399,38 +364,31 @@
                 <div class="space-y-4">
                     <div>
                         <h3 class="text-base font-black tracking-tight text-zinc-100 uppercase">Log New Resolution Ticket</h3>
-                        <p class="text-xs text-zinc-500">Submit geotagged proof straight to department metrics mapping.</p>
+                        <p class="text-xs text-zinc-500">Submit geotagged infrastructure proof straight to department metrics mapping.</p>
                     </div>
 
                     <div class="space-y-3 bg-zinc-900/40 p-4 rounded-xl border border-zinc-900 text-xs">
                         <label class="block space-y-1">
                             <span class="font-mono text-zinc-400 text-[10px] uppercase">Issue Headline Summary</span>
-                            <input id="f-title" type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200" />
+                            <input id="f-title" type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 focus:outline-none" />
                         </label>
 
                         <label class="block space-y-1">
                             <span class="font-mono text-zinc-400 text-[10px] uppercase">Target Department Branch</span>
-                            <select id="f-dept" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 font-mono">
+                            <select id="f-dept" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 font-mono focus:outline-none">
                                 ${localDepts.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}
                             </select>
                         </label>
 
                         <label class="block space-y-1">
                             <span class="font-mono text-zinc-400 text-[10px] uppercase">Description / Context Caption</span>
-                            <textarea id="f-caption" rows="3" placeholder="Provide precise situation data matrix..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 resize-none"></textarea>
+                            <textarea id="f-caption" rows="3" placeholder="Provide situation matrix parameters..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 resize-none focus:outline-none"></textarea>
                         </label>
 
                         <label class="block space-y-1">
-                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Localized Area Ref (Sector / Road)</span>
-                            <input id="f-loc" type="text" placeholder="e.g. Sector 4, Industrial Area" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200" />
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Localized Sector / Area Ref</span>
+                            <input id="f-loc" type="text" placeholder="e.g. Sector 4, Main Highway" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 focus:outline-none" />
                         </label>
-
-                        <div class="pt-1 space-y-1.5">
-                            <span class="font-mono text-zinc-400 text-[10px] uppercase block">Attach Media Verification</span>
-                            <button onclick="selectedUploadMedia='attached_file.jpg'; document.getElementById('m-status').innerText='✓ Evidence stream mock integrated.';" class="w-full bg-zinc-900 border border-zinc-800 border-dashed p-4 rounded-lg font-mono text-[11px] text-zinc-400 hover:border-zinc-700">
-                                <span id="m-status">Attach Media Verification (Photo/Video)</span>
-                            </button>
-                        </div>
                     </div>
 
                     <button onclick="actionSubmitTicketForm()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-xl py-3 text-xs uppercase tracking-wider transition-all">
@@ -438,7 +396,6 @@
                     </button>
                 </div>
             `;
-            selectedUploadMedia = null;
         }
 
         function actionSubmitTicketForm() {
@@ -447,7 +404,7 @@
             const caption = document.getElementById('f-caption').value.trim();
             const loc = document.getElementById('f-loc').value.trim();
 
-            if (!title || !caption || !loc) return alert("All text fields are required.");
+            if (!title || !caption || !loc) return alert("All target matrix parameters require validation input values.");
 
             const prof = db_profiles[sessionUser.id];
             const newTicket = {
@@ -455,21 +412,17 @@
                 country_id: sessionUser.country_id,
                 dept_id: dept,
                 citizen_id: sessionUser.id,
-                citizen_name: prof ? prof.full_name : "Citizen Root Data",
-                source: "App System Engine",
+                citizen_name: prof ? prof.full_name : "Citizen Sentinel",
                 title: title,
                 caption: caption,
                 location_name: loc,
-                media_payloads: selectedUploadMedia ? [selectedUploadMedia] : [],
                 status: "Pending",
                 created_at: new Date().toISOString(),
-                sla_expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
                 comments: []
             };
 
             db_tickets.unshift(newTicket);
-            trigger_process_ticket_xp_allocation(newTicket);
-            alert("Ticket dispatched into regional tracking system.");
+            alert("Sovereign ticket queued into dispatch pipelines.");
             routeTo('citizen_timeline');
         }
 
@@ -477,72 +430,73 @@
             const ticket = db_tickets.find(t => t.id === selectedTicketContextId);
             if (!ticket) return routeTo('citizen_timeline');
 
-            const matchedDept = DEPARTMENT_WALLS.find(d => d.id === ticket.dept_id) || { name: ticket.dept_id };
-            let statusColor = ticket.status === 'Resolved' ? "text-emerald-400 bg-emerald-400/10 border-emerald-500/20" : "text-amber-400 bg-amber-400/10 border-amber-500/20";
+            const dept = DEPARTMENT_WALLS.find(d => d.id === ticket.dept_id) || { name: ticket.dept_id };
+            let badgeClass = ticket.status === 'Resolved' ? "text-emerald-400 bg-emerald-400/10 border-emerald-500/20" : "text-amber-400 bg-amber-400/10 border-amber-500/20";
 
             let html = `
                 <div class="space-y-4">
-                    <span onclick="routeTo('${sessionUser.role === 'government' ? 'gov_dashboard' : 'citizen_timeline'}')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Back to Registry</span>
+                    <span onclick="routeTo('${sessionUser.role === 'government' ? 'gov_dashboard' : 'citizen_timeline'}')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Return to Queue</span>
                     
-                    <div class="bg-zinc-900/40 border border-zinc-900 p-4 rounded-xl space-y-3">
-                        <div class="flex justify-between items-start">
+                    <div class="bg-zinc-900/40 border border-zinc-900 p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-start gap-4">
                             <div>
-                                <h3 class="font-black text-sm text-zinc-100">${ticket.title}</h3>
-                                <span class="text-[9px] font-mono text-zinc-500 block">Node Group: ${matchedDept.name}</span>
+                                <h3 class="font-black text-base text-zinc-100 tracking-tight leading-snug">${ticket.title}</h3>
+                                <span class="text-[10px] font-mono text-zinc-500 block mt-1">Responsible Seat: ${dept.name}</span>
                             </div>
-                            <span class="text-[8px] font-mono px-2 py-0.5 rounded border uppercase ${statusColor}">${ticket.status}</span>
+                            <span class="text-[8px] font-mono px-2 py-0.5 rounded border uppercase shrink-0 ${badgeClass}">${ticket.status}</span>
                         </div>
-                        <p class="text-xs text-zinc-300 leading-relaxed">${ticket.caption}</p>
+                        <p class="text-xs text-zinc-300 leading-relaxed pt-1">${ticket.caption}</p>
+                        <div class="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-900 flex justify-between">
+                            <span>Filer: ${ticket.citizen_name}</span>
+                            <span>📍 ${ticket.location_name}</span>
+                        </div>
                     </div>
 
                     <div class="space-y-2">
-                        <span class="text-[10px] font-mono tracking-wider text-zinc-500 uppercase block">Action Status Audit Logs</span>
-                        <div class="space-y-2">
+                        <span class="text-[10px] font-mono tracking-wider text-zinc-500 uppercase block px-0.5">Official Response Desk Signature</span>
             `;
 
             if (ticket.comments.length === 0) {
-                html += `<p class="text-[10px] font-mono text-zinc-600 italic py-2">No active response signatures printed yet.</p>`;
+                html += `
+                    <div class="border border-zinc-900 bg-zinc-900/10 p-4 rounded-xl text-center">
+                        <p class="text-xs text-zinc-600 italic">No departmental confirmation signature printed to this node block yet.</p>
+                    </div>
+                `;
             } else {
                 ticket.comments.forEach(c => {
                     html += `
-                        <div class="border p-2.5 rounded-xl space-y-1 text-xs ${c.role === 'government' ? 'border-amber-500/20 bg-amber-500/[0.02]' : 'border-zinc-900 bg-zinc-900/30'}">
-                            <div class="flex justify-between items-center text-[9px] font-mono">
-                                <span class="font-bold text-zinc-300">${c.sender}</span>
-                            </div>
-                            <p class="text-zinc-400">${c.msg}</p>
+                        <div class="border border-amber-500/10 bg-amber-500/[0.02] p-4 rounded-xl space-y-1.5 text-xs">
+                            <span class="font-mono text-amber-400 text-[9px] font-bold block uppercase tracking-wider">🔒 UNIFIED AUTHORITY SIGN-OFF</span>
+                            <p class="text-zinc-300 leading-relaxed">${c.msg}</p>
                         </div>
                     `;
                 });
             }
 
-            html += `
-                        </div>
-                    </div>
-                </div>
-            `;
+            html += `</div></div>`;
             container.innerHTML = html;
         }
 
         function renderCitizenProfileView(container) {
-            const prof = db_profiles[sessionUser.id] || { full_name: "Citizen Participant", xp_score: 0, current_rank: "Citizen" };
+            const prof = db_profiles[sessionUser.id] || { full_name: "Citizen Participant", xp_score: 120, current_rank: "Sentinel", resolved_count: 3 };
             container.innerHTML = `
                 <div class="bg-zinc-900/40 border border-zinc-900 rounded-2xl p-6 text-center space-y-4">
                     <div class="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mx-auto">🪪</div>
                     <div>
-                        <h3 class="text-base font-black text-zinc-100 uppercase">${prof.full_name}</h3>
-                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/5 px-2.5 py-0.5 rounded border border-emerald-500/20 block w-fit mx-auto mt-1">${prof.current_rank}</span>
+                        <h3 class="text-base font-black text-zinc-100 uppercase tracking-tight">${prof.full_name}</h3>
+                        <span class="text-[9px] font-mono text-emerald-400 bg-emerald-500/5 px-2.5 py-0.5 rounded border border-emerald-500/20 block w-fit mx-auto mt-1">${prof.current_rank.toUpperCase()}</span>
                     </div>
                     <div class="grid grid-cols-2 gap-2 text-left font-mono">
                         <div class="bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
-                            <span class="text-[8px] text-zinc-500 block uppercase">Experience Yield</span>
-                            <span class="text-sm font-black text-zinc-200">${prof.xp_score} XP</span>
+                            <span class="text-[8px] text-zinc-500 block uppercase">Trust Metric</span>
+                            <span class="text-xs font-black text-zinc-200">${prof.xp_score} XP</span>
                         </div>
                         <div class="bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
-                            <span class="text-[8px] text-zinc-500 block uppercase">Cleared Cases</span>
-                            <span class="text-sm font-black text-zinc-200">${prof.resolved_count} Files</span>
+                            <span class="text-[8px] text-zinc-500 block uppercase">Verified Clearances</span>
+                            <span class="text-xs font-black text-zinc-200">${prof.resolved_count} Logs</span>
                         </div>
                     </div>
-                    <button onclick="sessionUser=null; routeTo('gateway');" class="w-full bg-zinc-950 border border-zinc-800 text-zinc-500 py-2 rounded-xl text-xs font-mono">DISCONNECT NODE SESSION</button>
+                    <button onclick="sessionUser=null; routeTo('gateway');" class="w-full bg-zinc-950 border border-zinc-900 hover:border-red-900/40 text-zinc-500 hover:text-red-400 py-2.5 rounded-xl text-xs font-mono transition-colors">DISCONNECT LAYER NODE</button>
                 </div>
             `;
         }
@@ -553,28 +507,28 @@
 
             let html = `
                 <div class="space-y-1">
-                    <h3 class="text-base font-black text-zinc-100 uppercase">${currentDeptDetails.name} Desk</h3>
-                    <p class="text-xs text-zinc-500">Processing infrastructure requests for verification targets.</p>
+                    <h3 class="text-base font-black text-zinc-100 uppercase tracking-tight">${currentDeptDetails.name}</h3>
+                    <p class="text-xs text-zinc-500">Processing live environmental infrastructure feedback loop channels.</p>
                 </div>
                 <div class="space-y-3 pt-2">
             `;
 
             if (deptQueue.length === 0) {
-                html += `<div class="text-center py-12 text-xs text-zinc-600 italic">Queue clear. No pending items reported.</div>`;
+                html += `<div class="text-center py-12 text-xs text-zinc-600 italic">Queue isolated clear. No pending items reported inside node stream.</div>`;
             } else {
                 deptQueue.forEach(t => {
                     html += `
                         <div class="bg-zinc-900/40 border border-zinc-900 p-4 rounded-xl space-y-3">
-                            <div class="flex justify-between items-start">
+                            <div class="flex justify-between items-start gap-2">
                                 <div>
-                                    <h4 class="font-black text-xs text-zinc-200">${t.title}</h4>
-                                    <span class="text-[9px] font-mono text-zinc-500 block">Filing target: ${t.citizen_name}</span>
+                                    <h4 class="font-black text-xs text-zinc-200 leading-snug">${t.title}</h4>
+                                    <span class="text-[9px] font-mono text-zinc-500 block mt-0.5">Location Anchor: ${t.location_name}</span>
                                 </div>
-                                <span class="text-[8px] font-mono px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 uppercase">${t.status}</span>
+                                <span class="text-[8px] font-mono px-1.5 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 uppercase shrink-0">${t.status}</span>
                             </div>
-                            <div class="flex gap-2">
-                                <button onclick="selectedTicketContextId='${t.id}'; routeTo('ticket_detail');" class="flex-1 bg-zinc-800 text-zinc-300 py-1.5 rounded-lg text-xs font-mono">View Audit Logs</button>
-                                ${t.status !== 'Resolved' ? `<button onclick="actionExecuteStateResolution('${t.id}')" class="flex-1 bg-amber-500 text-zinc-950 py-1.5 rounded-lg text-xs font-bold uppercase tracking-tight">Mark Resolved</button>` : ''}
+                            <div class="flex gap-2 pt-1">
+                                <button onclick="selectedTicketContextId='${t.id}'; routeTo('ticket_detail');" class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 py-2 rounded-lg text-xs font-mono transition-colors">Inspect Logs</button>
+                                ${t.status !== 'Resolved' ? `<button onclick="actionExecuteStateResolution('${t.id}')" class="flex-1 bg-amber-500 hover:bg-amber-400 text-zinc-950 py-2 rounded-lg text-xs font-bold uppercase tracking-tight transition-colors">Sign Resolution</button>` : ''}
                             </div>
                         </div>
                     `;
@@ -589,18 +543,17 @@
             if (ticket) {
                 ticket.status = 'Resolved';
                 ticket.comments.push({
-                    sender: "Official Engineering Desk Hub",
+                    sender: "Unified Authority Central Node",
                     role: "government",
-                    msg: "🔧 RESOLUTION SUMMARY BRIEF: Active repair crews dispatched to location matrix parameters. Field fixes successfully signed off."
+                    msg: "Verified resolution state achieved. Field operations deployed target fixes and synchronized structural recovery signatures back into regional matrix protocols."
                 });
-                alert("Incident status set to Resolved. Feedback loop open.");
+                alert("Resolution signed off and broadcasted back to citizen directory ledger successfully.");
                 renderView();
             }
         }
 
-        // --- APPS SYSTEM INITIAL REBOOT BOOTSTRAPPER ---
+        // --- APP ENGINE INITIAL BOOTSTRAPPER ---
         routeTo('gateway');
     </script>
 </body>
 </html>
- 
