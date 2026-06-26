@@ -1,9 +1,9 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicDuty - Public Utility</title>
+    <title>CivicDuty - Public Utility Platform</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -15,25 +15,29 @@
 
     <div class="max-w-md mx-auto min-h-screen bg-zinc-950 border-x border-zinc-800 flex flex-col justify-between shadow-2xl relative">
         
-        <!-- Top Status Banner -->
-        <header class="p-4 border-b border-zinc-900 sticky top-0 bg-zinc-950/80 backdrop-blur z-10 flex justify-between items-center">
+        <!-- App Header (Hidden during Onboarding) -->
+        <header id="app-header" class="p-4 border-b border-zinc-900 sticky top-0 bg-zinc-950/80 backdrop-blur z-10 flex justify-between items-center hidden">
             <div class="flex items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                 <h1 class="text-lg font-bold tracking-tight uppercase text-zinc-200">CivicDuty</h1>
             </div>
-            <span class="text-xs font-mono px-2 py-0.5 bg-zinc-900 rounded text-zinc-400 border border-zinc-800">UG_NODE_01</span>
+            <span id="country-node" class="text-xs font-mono px-2 py-0.5 bg-zinc-900 rounded text-zinc-400 border border-zinc-800">UG_NODE_01</span>
         </header>
 
-        <!-- Dynamic View Panels -->
-        <main id="main-content" class="flex-1 p-4 overflow-y-auto space-y-4 animate-fadeIn">
-            <!-- Content dynamically inserted by JS below -->
+        <!-- Main Workspace Dynamic View Router -->
+        <main id="main-content" class="flex-1 p-4 overflow-y-auto space-y-4">
+            <!-- Intercepted by script execution -->
         </main>
 
-        <!-- Bottom Global Navigation Rail -->
-        <nav class="border-t border-zinc-900 p-2 bg-zinc-950 flex justify-around items-center sticky bottom-0">
+        <!-- Navigation Bar (Hidden during Onboarding) -->
+        <nav id="app-nav" class="border-t border-zinc-900 p-2 bg-zinc-950 flex justify-around items-center sticky bottom-0 hidden">
             <button id="nav-feed" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                 <span class="text-[10px] font-medium tracking-wide">Registry</span>
+            </button>
+            <button id="nav-departments" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
+                <span class="text-[10px] font-medium tracking-wide">Departments</span>
             </button>
             <button id="nav-report" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300">
                 <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
@@ -43,126 +47,385 @@
     </div>
 
     <script>
-        // State Management
-        let currentView = 'feed';
-        const mainContent = document.getElementById('main-content');
-        const navFeed = document.getElementById('nav-feed');
-        const navReport = document.getElementById('nav-report');
+        // System Application State
+        let currentView = 'onboarding'; 
+        let selectedCountry = 'Uganda';
+        let nodeTag = 'UG_NODE_01';
+        let uploadedMockMedia = null;
 
-        const reports = [
-            { id: 1, title: "Main Street Water Main Burst", dept: "National Water & Sewerage", status: "In Progress", color: "text-amber-400 bg-amber-400/10", location: "Sector 4", time: "2h ago" },
-            { id: 2, title: "Grid Transformer Blown", dept: "Power & Electricity Distribution", status: "Resolved", color: "text-emerald-400 bg-emerald-400/10", location: "Kisenyi Ring Rd", time: "5h ago" },
-            { id: 3, title: "Unmarked Deep Pothole Hazard", dept: "Unallocated / Roads Authority", status: "Pending", color: "text-zinc-400 bg-zinc-400/10", location: "Industrial Area Bypass", time: "1d ago" }
+        const departmentRegistry = [
+            { id: 'nwsc', name: "National Water & Sewerage", followed: true, icon: "💧" },
+            { id: 'umeme', name: "Power & Electricity Distribution", followed: false, icon: "⚡" },
+            { id: 'unra', name: "National Roads Authority", followed: true, icon: "🛣️" },
+            { id: 'kcca', name: "Capital City Authority", followed: false, icon: "🏢" }
         ];
 
-        // Render Functions
+        const initialTickets = [
+            { 
+                id: 1, 
+                title: "Main Street Water Main Burst", 
+                deptId: "nwsc",
+                dept: "National Water & Sewerage", 
+                status: "Resolved", 
+                color: "text-emerald-400 bg-emerald-400/10", 
+                location: "Sector 4", 
+                time: "2h ago",
+                caption: "Water pressure has completely destroyed the sidewalk asphalt here. Flooding houses.",
+                citizenMedia: "📸 sidewalk_flood.jpg",
+                govResponse: {
+                    author: "NWSC Engineering Hub",
+                    message: "Emergency response team dispatched. Repaired broken valve line and cleared the asphalt debris. Service restored at 10:45 AM.",
+                    attachment: "📄 Works_Receipt_#4429.pdf",
+                    media: "🖼️ Fixed_Sidewalk_Pipeline.jpg"
+                }
+            },
+            { 
+                id: 2, 
+                title: "Grid Transformer Blown", 
+                deptId: "umeme",
+                dept: "Power & Electricity Distribution", 
+                status: "In Progress", 
+                color: "text-amber-400 bg-amber-400/10", 
+                location: "Kisenyi Ring Rd", 
+                time: "5h ago",
+                caption: "Loud pop heard at 4 AM, entire block is blacked out. Smoke was coming from the pole transformer box.",
+                citizenMedia: "📸 burnt_transformer.mov",
+                govResponse: null
+            },
+            { 
+                id: 3, 
+                title: "Unmarked Deep Pothole Hazard", 
+                deptId: "unra",
+                dept: "National Roads Authority", 
+                status: "Pending", 
+                color: "text-zinc-400 bg-zinc-400/10", 
+                location: "Industrial Area Bypass", 
+                time: "1d ago",
+                caption: "Dangerous pothole right after the blind curve. Cars are swerving into oncoming traffic to miss it.",
+                citizenMedia: null,
+                govResponse: null
+            }
+        ];
+
+        let masterTickets = [...initialTickets];
+
+        // UI Target Hooks
+        const mainContent = document.getElementById('main-content');
+        const appHeader = document.getElementById('app-header');
+        const appNav = document.getElementById('app-nav');
+        const nodeLabel = document.getElementById('country-node');
+
+        const navFeed = document.getElementById('nav-feed');
+        const navDepartments = document.getElementById('nav-departments');
+        const navReport = document.getElementById('nav-report');
+
+        // Main Router View Management
+        function navigateTo(view) {
+            currentView = view;
+            if (view === 'onboarding') {
+                appHeader.classList.add('hidden');
+                appNav.classList.add('hidden');
+            } else {
+                appHeader.classList.remove('hidden');
+                appNav.classList.remove('hidden');
+                nodeLabel.innerText = nodeTag;
+            }
+            render();
+        }
+
         function render() {
+            // Trigger View Animations
             mainContent.classList.remove('animate-fadeIn');
-            void mainContent.offsetWidth; // Trigger reflow for animation
+            void mainContent.offsetWidth; 
             mainContent.classList.add('animate-fadeIn');
 
-            if (currentView === 'feed') {
-                // Update Nav UI
-                navFeed.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400";
-                navReport.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300";
-
-                // Generate Feed HTML
-                let feedHtml = `
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                        </span>
-                        <input type="text" placeholder="Search case numbers, departments..." class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors" />
-                    </div>
-                    <div class="space-y-3">
-                        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase px-1">Active Resolution Logs</h2>
-                `;
-
-                reports.forEach(report => {
-                    feedHtml += `
-                        <div class="bg-zinc-900/40 border border-zinc-900 rounded-xl p-4 space-y-3 hover:border-zinc-800 transition-colors">
-                            <div class="flex justify-between items-start gap-4">
-                                <h3 class="font-medium text-sm text-zinc-200">${report.title}</h3>
-                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-medium tracking-wider whitespace-nowrap ${report.color}">
-                                    ${report.status}
-                                </span>
-                            </div>
-                            <div class="flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900/60 pt-2.5">
-                                <span class="font-medium text-zinc-400">${report.dept}</span>
-                                <div class="flex items-center gap-3">
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                                        ${report.location}
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        ${report.time}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                feedHtml += `</div>`;
-                mainContent.innerHTML = feedHtml;
-
-            } else {
-                // Update Nav UI
-                navFeed.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300";
-                navReport.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400";
-
-                // Generate Report Form HTML
-                mainContent.innerHTML = `
-                    <div class="space-y-4 pt-2">
-                        <div>
-                            <h2 class="text-base font-medium text-zinc-200">Log New Resolution Ticket</h2>
-                            <p class="text-xs text-zinc-500 mt-0.5">Submit geotagged proof straight to department metrics.</p>
-                        </div>
-                        <div class="space-y-3">
-                            <label class="block space-y-1.5">
-                                <span class="text-xs text-zinc-400 font-medium">Issue Summary</span>
-                                <input type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-700" />
-                            </label>
-                            <label class="block space-y-1.5">
-                                <span class="text-xs text-zinc-400 font-medium">Target Department</span>
-                                <select class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-zinc-700">
-                                    <option>National Water & Sewerage</option>
-                                    <option>Power & Electricity Distribution</option>
-                                    <option>Roads & Highways Authority</option>
-                                    <option>Unallocated / General Council</option>
-                                </select>
-                            </label>
-                            <div class="border-2 border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 transition-colors cursor-pointer">
-                                <span class="text-xs text-zinc-500 block">Attach Media Verification (Photo/Video)</span>
-                            </div>
-                            <button id="submit-ticket-btn" class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded-xl py-3 text-sm shadow-lg shadow-white/5 transition-all mt-4">
-                                Dispatch Verified Ticket
-                            </button>
-                        </div>
-                    </div>
-                `;
-
-                document.getElementById('submit-ticket-btn').addEventListener('click', () => {
-                    currentView = 'feed';
-                    render();
-                });
+            if (currentView === 'onboarding') {
+                renderOnboarding();
+            } else if (currentView === 'feed') {
+                renderFeed();
+            } else if (currentView === 'departments') {
+                renderDepartments();
+            } else if (currentView === 'report') {
+                renderReportForm();
             }
         }
 
-        // Event Listeners
-        navFeed.addEventListener('click', () => {
-            currentView = 'feed';
-            render();
-        });
+        // View 1: KYC Sovereign Domain Filter Onboarding
+        function renderOnboarding() {
+            mainContent.innerHTML = `
+                <div class="space-y-6 pt-6 pb-4">
+                    <div class="text-center space-y-2">
+                        <div class="inline-flex p-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-2xl">⚡</div>
+                        <h2 class="text-xl font-bold tracking-tight text-zinc-100">Establish Sovereign Identity</h2>
+                        <p class="text-xs text-zinc-400 max-w-xs mx-auto">Verify identity credentials to map your access point to the regional digital resolution network.</p>
+                    </div>
 
-        navReport.addEventListener('click', () => {
-            currentView = 'report';
-            render();
-        });
+                    <div class="space-y-4 bg-zinc-900/40 p-5 rounded-2xl border border-zinc-900">
+                        <label class="block space-y-1.5">
+                            <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Select Country Node</span>
+                            <select id="country-select" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-emerald-500">
+                                <option value="Uganda" data-node="UG_NODE_01">Uganda (UG_NODE_01)</option>
+                                <option value="Kenya" data-node="KE_NODE_02">Kenya (KE_NODE_02)</option>
+                                <option value="Nigeria" data-node="NG_NODE_05">Nigeria (NG_NODE_05)</option>
+                            </select>
+                        </label>
 
-        // Initial Run
-        render();
+                        <div class="space-y-2">
+                            <span class="text-xs font-semibold text-zinc-400 uppercase tracking-wider block">Credential Upload Option</span>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button id="btn-id" class="p-3 text-xs bg-zinc-900 border border-zinc-800 rounded-xl font-medium text-zinc-300 hover:border-emerald-500 focus:border-emerald-500 flex items-center justify-center gap-1.5 transition-all">
+                                    🪪 National ID
+                                </button>
+                                <button id="btn-pass" class="p-3 text-xs bg-zinc-900 border border-zinc-800 rounded-xl font-medium text-zinc-300 hover:border-emerald-500 focus:border-emerald-500 flex items-center justify-center gap-1.5 transition-all">
+                                    🛂 Passport Book
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="border-2 border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 transition-all cursor-pointer">
+                            <span class="text-xs text-zinc-500 block">Scan document or upload cryptographic JSON dump</span>
+                        </div>
+                    </div>
+
+                    <button id="submit-onboarding" class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-semibold rounded-xl py-3.5 text-sm transition-all shadow-lg shadow-white/5">
+                        Initialize Node Access
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('submit-onboarding').addEventListener('click', () => {
+                const selector = document.getElementById('country-select');
+                selectedCountry = selector.value;
+                nodeTag = selector.options[selector.selectedIndex].getAttribute('data-node');
+                navigateTo('feed');
+            });
+        }
+
+        // View 2: Split Feed (Following vs. Trending Department Metrics)
+        function renderFeed() {
+            updateNavUI('feed');
+            
+            const followedDepts = departmentRegistry.filter(d => d.followed).map(d => d.id);
+            
+            let html = `
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    </span>
+                    <input type="text" placeholder="Search parameters, nodes, tracking keys..." class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50" />
+                </div>
+
+                <div class="space-y-4">
+                    <h2 class="text-xs font-bold tracking-wider text-zinc-500 uppercase px-1">Subscribed Streams</h2>
+            `;
+
+            // Filter Subscribed Items
+            const followedTickets = masterTickets.filter(t => followedDepts.includes(t.deptId));
+            if(followedTickets.length === 0) {
+                html += `<p class="text-xs text-zinc-600 px-1 italic">No active streams. Subscribe to specific agencies in the Departments tab.</p>`;
+            } else {
+                followedTickets.forEach(t => { html += buildTicketCard(t); });
+            }
+
+            html += `
+                </div>
+                <div class="space-y-4 pt-2">
+                    <h2 class="text-xs font-bold tracking-wider text-amber-500/80 uppercase px-1 flex items-center gap-1">
+                        ⚡ Global Trending (Other Ministries)
+                    </h2>
+            `;
+
+            // Filter Non-Subscribed / Trending Items
+            const trendingTickets = masterTickets.filter(t => !followedDepts.includes(t.deptId));
+            if(trendingTickets.length === 0) {
+                html += `<p class="text-xs text-zinc-600 px-1 italic">No extra trending node flags detected.</p>`;
+            } else {
+                trendingTickets.forEach(t => { html += buildTicketCard(t); });
+            }
+
+            html += `</div>`;
+            mainContent.innerHTML = html;
+        }
+
+        // Helper Template builder for Tickets & Interventions
+        function buildTicketCard(ticket) {
+            let govSnippet = "";
+            if(ticket.govResponse) {
+                govSnippet = `
+                    <div class="bg-emerald-950/20 border border-emerald-900/40 rounded-lg p-3 space-y-2 mt-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-emerald-400 flex items-center gap-1">🏛️ ${ticket.govResponse.author}</span>
+                            <span class="text-[9px] font-mono bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">Action Logged</span>
+                        </div>
+                        <p class="text-xs text-zinc-300 leading-relaxed">${ticket.govResponse.message}</p>
+                        <div class="flex flex-wrap gap-2 pt-1 text-[10px] text-zinc-400 font-mono">
+                            <span class="bg-zinc-900 px-2 py-1 rounded border border-zinc-800 flex items-center gap-1">📁 ${ticket.govResponse.attachment}</span>
+                            <span class="bg-zinc-900 px-2 py-1 rounded border border-zinc-800 flex items-center gap-1">🖼️ ${ticket.govResponse.media}</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                govSnippet = `
+                    <div class="bg-zinc-900/20 border border-dashed border-zinc-900 rounded-lg p-3 text-center mt-1">
+                        <span class="text-[11px] text-zinc-500 italic">Awaiting State Accountability Dispatch</span>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="bg-zinc-900/40 border border-zinc-900 rounded-xl p-4 space-y-3 hover:border-zinc-800 transition-all">
+                    <div class="flex justify-between items-start gap-4">
+                        <div>
+                            <h3 class="font-semibold text-sm text-zinc-200">${ticket.title}</h3>
+                            <span class="text-xs text-zinc-400 font-medium">${ticket.dept}</span>
+                        </div>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-semibold tracking-wider whitespace-nowrap ${ticket.color}">
+                            ${ticket.status}
+                        </span>
+                    </div>
+                    
+                    ${ticket.caption ? `<p class="text-xs text-zinc-400 leading-normal">${ticket.caption}</p>` : ''}
+                    
+                    ${ticket.citizenMedia ? `
+                        <div class="text-xs text-zinc-500 font-mono bg-zinc-950 p-2 rounded border border-zinc-900 flex items-center gap-1.5">
+                            ${ticket.citizenMedia}
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center justify-between text-[11px] text-zinc-500 border-t border-zinc-900/60 pt-2">
+                        <div class="flex items-center gap-2">
+                            <span class="flex items-center gap-0.5">📍 ${ticket.location}</span>
+                        </div>
+                        <span>⏱️ ${ticket.time}</span>
+                    </div>
+
+                    ${govSnippet}
+                </div>
+            `;
+        }
+
+        // View 3: Follow/Unfollow Government Directories
+        function renderDepartments() {
+            updateNavUI('departments');
+            let html = `
+                <div class="space-y-2">
+                    <h2 class="text-base font-semibold text-zinc-200">National Framework Directory</h2>
+                    <p class="text-xs text-zinc-500">Subscribe directly to institutional feeds to monitor live resolution tickets and pipeline actions.</p>
+                </div>
+                <div class="space-y-2 pt-2">
+            `;
+
+            departmentRegistry.forEach(dept => {
+                html += `
+                    <div class="bg-zinc-900/30 border border-zinc-900 p-3 rounded-xl flex items-center justify-between transition-all hover:border-zinc-800">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-sm">${dept.icon}</div>
+                            <span class="text-xs font-medium text-zinc-200">${dept.name}</span>
+                        </div>
+                        <button onclick="toggleFollow('${dept.id}')" class="text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${dept.followed ? 'bg-zinc-800 text-zinc-300 hover:bg-red-950/40 hover:text-red-400' : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-zinc-950'}">
+                            ${dept.followed ? 'Unsubscribe' : 'Subscribe'}
+                        </button>
+                    </div>
+                `;
+            });
+
+            html += `</div>`;
+            mainContent.innerHTML = html;
+        }
+
+        window.toggleFollow = function(id) {
+            const target = departmentRegistry.find(d => d.id === id);
+            if(target) {
+                target.followed = !target.followed;
+                renderDepartments();
+            }
+        };
+
+        // View 4: Ticket Creation Platform
+        function renderReportForm() {
+            updateNavUI('report');
+            mainContent.innerHTML = `
+                <div class="space-y-4 pt-2">
+                    <div>
+                        <h2 class="text-base font-medium text-zinc-200">Log New Resolution Ticket</h2>
+                        <p class="text-xs text-zinc-500 mt-0.5">Submit geotagged proof straight to department metrics.</p>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="block space-y-1.5">
+                            <span class="text-xs text-zinc-400 font-medium">Issue Headline</span>
+                            <input id="form-title" type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-700" />
+                        </label>
+                        <label class="block space-y-1.5">
+                            <span class="text-xs text-zinc-400 font-medium">Target Department</span>
+                            <select id="form-dept" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-zinc-700">
+                                ${departmentRegistry.map(d => `<option value="${d.id}">${d.name}</option>`).join('')}
+                            </select>
+                        </label>
+                        <label class="block space-y-1.5">
+                            <span class="text-xs text-zinc-400 font-medium">Description / Context Caption</span>
+                            <textarea id="form-caption" rows="3" placeholder="Provide precise situation data..." class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-700 resize-none"></textarea>
+                        </label>
+                        
+                        <div id="media-upload-zone" class="border-2 border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 transition-colors cursor-pointer relative">
+                            <span id="upload-status" class="text-xs text-zinc-500 block">Attach Media Verification (Photo/Video)</span>
+                        </div>
+
+                        <button id="dispatch-ticket-btn" class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded-xl py-3 text-sm shadow-lg shadow-white/5 transition-all mt-4">
+                            Dispatch Verified Ticket
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Simulate Media upload binding
+            const uploadZone = document.getElementById('media-upload-zone');
+            uploadZone.addEventListener('click', () => {
+                uploadedMockMedia = "📸 ATTACHMENT_" + Math.floor(Math.random() * 9000 + 1000) + ".jpg";
+                document.getElementById('upload-status').innerText = `Linked: ${uploadedMockMedia}`;
+                uploadZone.className = "border-2 border-dashed border-emerald-500/50 bg-emerald-500/5 rounded-xl p-6 text-center transition-colors cursor-pointer relative";
+            });
+
+            document.getElementById('dispatch-ticket-btn').addEventListener('click', () => {
+                const titleVal = document.getElementById('form-title').value || "General Infrastructure Failure";
+                const deptSelect = document.getElementById('form-dept');
+                const deptIdVal = deptSelect.value;
+                const deptNameVal = deptSelect.options[deptSelect.selectedIndex].text;
+                const captionVal = document.getElementById('form-caption').value || "";
+
+                const newTicket = {
+                    id: masterTickets.length + 1,
+                    title: titleVal,
+                    deptId: deptIdVal,
+                    dept: deptNameVal,
+                    status: "Pending",
+                    color: "text-zinc-400 bg-zinc-400/10",
+                    location: "Current Sector",
+                    time: "Just Now",
+                    caption: captionVal,
+                    citizenMedia: uploadedMockMedia,
+                    govResponse: null
+                };
+
+                masterTickets.unshift(newTicket);
+                uploadedMockMedia = null; // Flush state
+                navigateTo('feed');
+            });
+        }
+
+        // Global Utility Style Sync
+        function updateNavUI(active) {
+            navFeed.className = `flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${active === 'feed' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`;
+            navDepartments.className = `flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${active === 'departments' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`;
+            navReport.className = `flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${active === 'report' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`;
+        }
+
+        // App Navigation Listeners
+        navFeed.addEventListener('click', () => navigateTo('feed'));
+        navDepartments.addEventListener('click', () => navigateTo('departments'));
+        navReport.addEventListener('click', () => navigateTo('report'));
+
+        // Initialize App on Runtime Bootstrap
+        navigateTo('onboarding');
     </script>
 </body>
 </html>
