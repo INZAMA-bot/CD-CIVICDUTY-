@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -373,3 +373,234 @@
                                     <div class="flex justify-between items-center gap-2">
                                         <div>
                                             <span class="font-black text-xs text-zinc-200 tracking-tight block">${matchedDept.name}</span>
+                                            <span class="text-[9px] text-zinc-500 font-mono block">filed by ${t.citizen_name}</span>
+                                        </div>
+                                        <span class="text-[8px] font-mono px-1.5 py-0.5 rounded border uppercase ${statusColor}">${t.status}</span>
+                                    </div>
+                                    <h4 class="font-bold text-xs text-zinc-200 pt-1">${t.title}</h4>
+                                    <p class="text-xs text-zinc-400 line-clamp-2 leading-relaxed">${t.caption}</p>
+                                    <div class="flex items-center justify-between text-[9px] font-mono text-zinc-500 pt-2">
+                                        <span>📍 ${t.location_name}</span>
+                                        <span class="text-zinc-400 font-bold">${calculateSlaTimeRemaining(t.sla_expires_at)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderCitizenReportView(container) {
+            const localDepts = DEPARTMENT_WALLS.filter(d => d.country_id === sessionUser.country_id);
+            container.innerHTML = `
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-base font-black tracking-tight text-zinc-100 uppercase">Log New Resolution Ticket</h3>
+                        <p class="text-xs text-zinc-500">Submit geotagged proof straight to department metrics mapping.</p>
+                    </div>
+
+                    <div class="space-y-3 bg-zinc-900/40 p-4 rounded-xl border border-zinc-900 text-xs">
+                        <label class="block space-y-1">
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Issue Headline Summary</span>
+                            <input id="f-title" type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200" />
+                        </label>
+
+                        <label class="block space-y-1">
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Target Department Branch</span>
+                            <select id="f-dept" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 font-mono">
+                                ${localDepts.map(d => `<option value="${d.id}">${d.icon} ${d.name}</option>`).join('')}
+                            </select>
+                        </label>
+
+                        <label class="block space-y-1">
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Description / Context Caption</span>
+                            <textarea id="f-caption" rows="3" placeholder="Provide precise situation data matrix..." class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200 resize-none"></textarea>
+                        </label>
+
+                        <label class="block space-y-1">
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase">Localized Area Ref (Sector / Road)</span>
+                            <input id="f-loc" type="text" placeholder="e.g. Sector 4, Industrial Area" class="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-2.5 text-zinc-200" />
+                        </label>
+
+                        <div class="pt-1 space-y-1.5">
+                            <span class="font-mono text-zinc-400 text-[10px] uppercase block">Attach Media Verification</span>
+                            <button onclick="selectedUploadMedia='attached_file.jpg'; document.getElementById('m-status').innerText='✓ Evidence stream mock integrated.';" class="w-full bg-zinc-900 border border-zinc-800 border-dashed p-4 rounded-lg font-mono text-[11px] text-zinc-400 hover:border-zinc-700">
+                                <span id="m-status">Attach Media Verification (Photo/Video)</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button onclick="actionSubmitTicketForm()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black rounded-xl py-3 text-xs uppercase tracking-wider transition-all">
+                        Dispatch Verified Ticket
+                    </button>
+                </div>
+            `;
+            selectedUploadMedia = null;
+        }
+
+        function actionSubmitTicketForm() {
+            const title = document.getElementById('f-title').value.trim();
+            const dept = document.getElementById('f-dept').value;
+            const caption = document.getElementById('f-caption').value.trim();
+            const loc = document.getElementById('f-loc').value.trim();
+
+            if (!title || !caption || !loc) return alert("All text fields are required.");
+
+            const prof = db_profiles[sessionUser.id];
+            const newTicket = {
+                id: "tkt-" + Math.floor(Math.random() * 90000 + 10000),
+                country_id: sessionUser.country_id,
+                dept_id: dept,
+                citizen_id: sessionUser.id,
+                citizen_name: prof ? prof.full_name : "Citizen Root Data",
+                source: "App System Engine",
+                title: title,
+                caption: caption,
+                location_name: loc,
+                media_payloads: selectedUploadMedia ? [selectedUploadMedia] : [],
+                status: "Pending",
+                created_at: new Date().toISOString(),
+                sla_expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(),
+                comments: []
+            };
+
+            db_tickets.unshift(newTicket);
+            trigger_process_ticket_xp_allocation(newTicket);
+            alert("Ticket dispatched into regional tracking system.");
+            routeTo('citizen_timeline');
+        }
+
+        function renderTicketDetailView(container) {
+            const ticket = db_tickets.find(t => t.id === selectedTicketContextId);
+            if (!ticket) return routeTo('citizen_timeline');
+
+            const matchedDept = DEPARTMENT_WALLS.find(d => d.id === ticket.dept_id) || { name: ticket.dept_id };
+            let statusColor = ticket.status === 'Resolved' ? "text-emerald-400 bg-emerald-400/10 border-emerald-500/20" : "text-amber-400 bg-amber-400/10 border-amber-500/20";
+
+            let html = `
+                <div class="space-y-4">
+                    <span onclick="routeTo('${sessionUser.role === 'government' ? 'gov_dashboard' : 'citizen_timeline'}')" class="text-xs text-zinc-500 cursor-pointer hover:text-zinc-300 font-mono">⇜ Back to Registry</span>
+                    
+                    <div class="bg-zinc-900/40 border border-zinc-900 p-4 rounded-xl space-y-3">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-black text-sm text-zinc-100">${ticket.title}</h3>
+                                <span class="text-[9px] font-mono text-zinc-500 block">Node Group: ${matchedDept.name}</span>
+                            </div>
+                            <span class="text-[8px] font-mono px-2 py-0.5 rounded border uppercase ${statusColor}">${ticket.status}</span>
+                        </div>
+                        <p class="text-xs text-zinc-300 leading-relaxed">${ticket.caption}</p>
+                    </div>
+
+                    <div class="space-y-2">
+                        <span class="text-[10px] font-mono tracking-wider text-zinc-500 uppercase block">Action Status Audit Logs</span>
+                        <div class="space-y-2">
+            `;
+
+            if (ticket.comments.length === 0) {
+                html += `<p class="text-[10px] font-mono text-zinc-600 italic py-2">No active response signatures printed yet.</p>`;
+            } else {
+                ticket.comments.forEach(c => {
+                    html += `
+                        <div class="border p-2.5 rounded-xl space-y-1 text-xs ${c.role === 'government' ? 'border-amber-500/20 bg-amber-500/[0.02]' : 'border-zinc-900 bg-zinc-900/30'}">
+                            <div class="flex justify-between items-center text-[9px] font-mono">
+                                <span class="font-bold text-zinc-300">${c.sender}</span>
+                            </div>
+                            <p class="text-zinc-400">${c.msg}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.innerHTML = html;
+        }
+
+        function renderCitizenProfileView(container) {
+            const prof = db_profiles[sessionUser.id] || { full_name: "Citizen Participant", xp_score: 0, current_rank: "Citizen" };
+            container.innerHTML = `
+                <div class="bg-zinc-900/40 border border-zinc-900 rounded-2xl p-6 text-center space-y-4">
+                    <div class="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xl mx-auto">🪪</div>
+                    <div>
+                        <h3 class="text-base font-black text-zinc-100 uppercase">${prof.full_name}</h3>
+                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/5 px-2.5 py-0.5 rounded border border-emerald-500/20 block w-fit mx-auto mt-1">${prof.current_rank}</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-left font-mono">
+                        <div class="bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
+                            <span class="text-[8px] text-zinc-500 block uppercase">Experience Yield</span>
+                            <span class="text-sm font-black text-zinc-200">${prof.xp_score} XP</span>
+                        </div>
+                        <div class="bg-zinc-950 border border-zinc-900 p-3 rounded-xl">
+                            <span class="text-[8px] text-zinc-500 block uppercase">Cleared Cases</span>
+                            <span class="text-sm font-black text-zinc-200">${prof.resolved_count} Files</span>
+                        </div>
+                    </div>
+                    <button onclick="sessionUser=null; routeTo('gateway');" class="w-full bg-zinc-950 border border-zinc-800 text-zinc-500 py-2 rounded-xl text-xs font-mono">DISCONNECT NODE SESSION</button>
+                </div>
+            `;
+        }
+
+        function renderGovDashboardView(container) {
+            const currentDeptDetails = DEPARTMENT_WALLS.find(d => d.id === sessionUser.dept_id) || { name: sessionUser.dept_id };
+            const deptQueue = db_tickets.filter(t => t.country_id === sessionUser.country_id && t.dept_id === sessionUser.dept_id);
+
+            let html = `
+                <div class="space-y-1">
+                    <h3 class="text-base font-black text-zinc-100 uppercase">${currentDeptDetails.name} Desk</h3>
+                    <p class="text-xs text-zinc-500">Processing infrastructure requests for verification targets.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+            `;
+
+            if (deptQueue.length === 0) {
+                html += `<div class="text-center py-12 text-xs text-zinc-600 italic">Queue clear. No pending items reported.</div>`;
+            } else {
+                deptQueue.forEach(t => {
+                    html += `
+                        <div class="bg-zinc-900/40 border border-zinc-900 p-4 rounded-xl space-y-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <h4 class="font-black text-xs text-zinc-200">${t.title}</h4>
+                                    <span class="text-[9px] font-mono text-zinc-500 block">Filing target: ${t.citizen_name}</span>
+                                </div>
+                                <span class="text-[8px] font-mono px-2 py-0.5 rounded border bg-amber-500/10 text-amber-400 border-amber-500/20 uppercase">${t.status}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="selectedTicketContextId='${t.id}'; routeTo('ticket_detail');" class="flex-1 bg-zinc-800 text-zinc-300 py-1.5 rounded-lg text-xs font-mono">View Audit Logs</button>
+                                ${t.status !== 'Resolved' ? `<button onclick="actionExecuteStateResolution('${t.id}')" class="flex-1 bg-amber-500 text-zinc-950 py-1.5 rounded-lg text-xs font-bold uppercase tracking-tight">Mark Resolved</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function actionExecuteStateResolution(id) {
+            const ticket = db_tickets.find(t => t.id === id);
+            if (ticket) {
+                ticket.status = 'Resolved';
+                ticket.comments.push({
+                    sender: "Official Engineering Desk Hub",
+                    role: "government",
+                    msg: "🔧 RESOLUTION SUMMARY BRIEF: Active repair crews dispatched to location matrix parameters. Field fixes successfully signed off."
+                });
+                alert("Incident status set to Resolved. Feedback loop open.");
+                renderView();
+            }
+        }
+
+        // --- APPS SYSTEM INITIAL REBOOT BOOTSTRAPPER ---
+        routeTo('gateway');
+    </script>
+</body>
+</html>
+ 
