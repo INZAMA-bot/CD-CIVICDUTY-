@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -6,11 +6,6 @@
     <title>CivicDuty - Public Utility</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM Core Libraries -->
-    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-    <!-- Babel compiler for live JSX processing -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
@@ -18,130 +13,156 @@
 </head>
 <body class="bg-zinc-950 text-zinc-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
 
-    <div id="root"></div>
+    <div class="max-w-md mx-auto min-h-screen bg-zinc-950 border-x border-zinc-800 flex flex-col justify-between shadow-2xl relative">
+        
+        <!-- Top Status Banner -->
+        <header class="p-4 border-b border-zinc-900 sticky top-0 bg-zinc-950/80 backdrop-blur z-10 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <h1 class="text-lg font-bold tracking-tight uppercase text-zinc-200">CivicDuty</h1>
+            </div>
+            <span class="text-xs font-mono px-2 py-0.5 bg-zinc-900 rounded text-zinc-400 border border-zinc-800">UG_NODE_01</span>
+        </header>
 
-    <script type="text/babel">
-        // Internal SVG Icon Library
-        const Icon = ({ name, className = "w-5 h-5" }) => {
-            const icons = {
-                shield: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
-                mapPin: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
-                clock: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
-                search: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>,
-                plus: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>,
-                alert: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>,
-                check: <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-            };
-            return icons[name] || null;
-        };
+        <!-- Dynamic View Panels -->
+        <main id="main-content" class="flex-1 p-4 overflow-y-auto space-y-4 animate-fadeIn">
+            <!-- Content dynamically inserted by JS below -->
+        </main>
 
-        // Main App Layout
-        const CivicDutyApp = () => {
-            const [view, setView] = React.useState('feed'); // feed, report
-            const [reports, setReports] = React.useState([
-                { id: 1, title: "Main Street Water Main Burst", dept: "National Water & Sewerage", status: "In Progress", color: "text-amber-400 bg-amber-400/10", location: "Sector 4", time: "2h ago" },
-                { id: 2, title: "Grid Transformer Blown", dept: "Power & Electricity Distribution", status: "Resolved", color: "text-emerald-400 bg-emerald-400/10", location: "Kisenyi Ring Rd", time: "5h ago" },
-                { id: 3, title: "Unmarked Deep Pothole Hazard", dept: "Unallocated / Roads Authority", status: "Pending", color: "text-zinc-400 bg-zinc-400/10", location: "Industrial Area Bypass", time: "1d ago" }
-            ]);
+        <!-- Bottom Global Navigation Rail -->
+        <nav class="border-t border-zinc-900 p-2 bg-zinc-950 flex justify-around items-center sticky bottom-0">
+            <button id="nav-feed" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                <span class="text-[10px] font-medium tracking-wide">Registry</span>
+            </button>
+            <button id="nav-report" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                <span class="text-[10px] font-medium tracking-wide">File Ticket</span>
+            </button>
+        </nav>
+    </div>
 
-            return (
-                <div className="max-w-md mx-auto min-h-screen bg-zinc-950 border-x border-zinc-800 flex flex-col justify-between shadow-2xl relative">
-                    
-                    {/* Top Status Banner */}
-                    <header className="p-4 border-b border-zinc-900 sticky top-0 bg-zinc-950/80 backdrop-blur z-10 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                            <h1 className="text-lg font-bold tracking-tight uppercase text-zinc-200">CivicDuty</h1>
-                        </div>
-                        <span className="text-xs font-mono px-2 py-0.5 bg-zinc-900 rounded text-zinc-400 border border-zinc-800">UG_NODE_01</span>
-                    </header>
+    <script>
+        // State Management
+        let currentView = 'feed';
+        const mainContent = document.getElementById('main-content');
+        const navFeed = document.getElementById('nav-feed');
+        const navReport = document.getElementById('nav-report');
 
-                    {/* Dynamic View Panel */}
-                    <main className="flex-1 p-4 overflow-y-auto space-y-4 animate-fadeIn">
-                        {view === 'feed' ? (
-                            <>
-                                {/* Search Bar Widget */}
-                                <div className="relative">
-                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
-                                        <Icon name="search" className="w-4 h-4" />
+        const reports = [
+            { id: 1, title: "Main Street Water Main Burst", dept: "National Water & Sewerage", status: "In Progress", color: "text-amber-400 bg-amber-400/10", location: "Sector 4", time: "2h ago" },
+            { id: 2, title: "Grid Transformer Blown", dept: "Power & Electricity Distribution", status: "Resolved", color: "text-emerald-400 bg-emerald-400/10", location: "Kisenyi Ring Rd", time: "5h ago" },
+            { id: 3, title: "Unmarked Deep Pothole Hazard", dept: "Unallocated / Roads Authority", status: "Pending", color: "text-zinc-400 bg-zinc-400/10", location: "Industrial Area Bypass", time: "1d ago" }
+        ];
+
+        // Render Functions
+        function render() {
+            mainContent.classList.remove('animate-fadeIn');
+            void mainContent.offsetWidth; // Trigger reflow for animation
+            mainContent.classList.add('animate-fadeIn');
+
+            if (currentView === 'feed') {
+                // Update Nav UI
+                navFeed.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400";
+                navReport.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300";
+
+                // Generate Feed HTML
+                let feedHtml = `
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-zinc-500">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                        </span>
+                        <input type="text" placeholder="Search case numbers, departments..." class="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors" />
+                    </div>
+                    <div class="space-y-3">
+                        <h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase px-1">Active Resolution Logs</h2>
+                `;
+
+                reports.forEach(report => {
+                    feedHtml += `
+                        <div class="bg-zinc-900/40 border border-zinc-900 rounded-xl p-4 space-y-3 hover:border-zinc-800 transition-colors">
+                            <div class="flex justify-between items-start gap-4">
+                                <h3 class="font-medium text-sm text-zinc-200">${report.title}</h3>
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-medium tracking-wider whitespace-nowrap ${report.color}">
+                                    ${report.status}
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900/60 pt-2.5">
+                                <span class="font-medium text-zinc-400">${report.dept}</span>
+                                <div class="flex items-center gap-3">
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                        ${report.location}
                                     </span>
-                                    <input type="text" placeholder="Search case numbers, departments..." className="w-full bg-zinc-900/50 border border-zinc-800 rounded-xl py-2.5 pl-10 pr-4 text-sm text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-emerald-500/50 transition-colors" />
-                                </div>
-
-                                {/* Active Tracked Items */}
-                                <div className="space-y-3">
-                                    <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase px-1">Active Resolution Logs</h2>
-                                    {reports.map(report => (
-                                        <div key={report.id} className="bg-zinc-900/40 border border-zinc-900 rounded-xl p-4 space-y-3 hover:border-zinc-800 transition-colors">
-                                            <div className="flex justify-between items-start gap-4">
-                                                <h3 className="font-medium text-sm text-zinc-200">{report.title}</h3>
-                                                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-medium tracking-wider whitespace-nowrap ${report.color}`}>
-                                                    {report.status}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-xs text-zinc-500 border-t border-zinc-900/60 pt-2.5">
-                                                <span className="font-medium text-zinc-400">{report.dept}</span>
-                                                <div className="flex items-center gap-3">
-                                                    <span className="flex items-center gap-1"><Icon name="mapPin" className="w-3 h-3" />{report.location}</span>
-                                                    <span className="flex items-center gap-1"><Icon name="clock" className="w-3 h-3" />{report.time}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            /* Report Filing View */
-                            <div className="space-y-4 pt-2">
-                                <div>
-                                    <h2 className="text-base font-medium text-zinc-200">Log New Resolution Ticket</h2>
-                                    <p className="text-xs text-zinc-500 mt-0.5">Submit geotagged proof straight to department metrics.</p>
-                                </div>
-                                <div className="space-y-3">
-                                    <label className="block space-y-1.5">
-                                        <span className="text-xs text-zinc-400 font-medium">Issue Summary</span>
-                                        <input type="text" placeholder="e.g., Damaged bridge railing" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-700" />
-                                    </label>
-                                    <label className="block space-y-1.5">
-                                        <span className="text-xs text-zinc-400 font-medium">Target Department</span>
-                                        <select className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-zinc-700">
-                                            <option>National Water & Sewerage</option>
-                                            <option>Power & Electricity Distribution</option>
-                                            <option>Roads & Highways Authority</option>
-                                            <option>Unallocated / General Council</option>
-                                        </select>
-                                    </label>
-                                    <div className="border-2 border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 transition-colors cursor-pointer">
-                                        <span className="text-xs text-zinc-500 block">Attach Media Verification (Photo/Video)</span>
-                                    </div>
-                                    <button onClick={() => setView('feed')} className="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded-xl py-3 text-sm shadow-lg shadow-white/5 transition-all mt-4">
-                                        Dispatch Verified Ticket
-                                    </button>
+                                    <span class="flex items-center gap-1">
+                                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        ${report.time}
+                                    </span>
                                 </div>
                             </div>
-                        )}
-                    </main>
+                        </div>
+                    `;
+                });
 
-                    {/* Bottom Global Navigation Rail */}
-                    <nav className="border-t border-zinc-900 p-2 bg-zinc-950 flex justify-around items-center sticky bottom-0">
-                        <button onClick={() => setView('feed')} className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${view === 'feed' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                            <Icon name="shield" />
-                            <span className="text-[10px] font-medium tracking-wide">Registry</span>
-                        </button>
-                        <button onClick={() => setView('report')} className={`flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors ${view === 'report' ? 'text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}>
-                            <Icon name="plus" />
-                            <span className="text-[10px] font-medium tracking-wide">File Ticket</span>
-                        </button>
-                    </nav>
-                </div>
-            );
-        };
+                feedHtml += `</div>`;
+                mainContent.innerHTML = feedHtml;
 
-        // Render to DOM safely
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<CivicDutyApp />);
+            } else {
+                // Update Nav UI
+                navFeed.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-zinc-500 hover:text-zinc-300";
+                navReport.className = "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors text-emerald-400";
+
+                // Generate Report Form HTML
+                mainContent.innerHTML = `
+                    <div class="space-y-4 pt-2">
+                        <div>
+                            <h2 class="text-base font-medium text-zinc-200">Log New Resolution Ticket</h2>
+                            <p class="text-xs text-zinc-500 mt-0.5">Submit geotagged proof straight to department metrics.</p>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="block space-y-1.5">
+                                <span class="text-xs text-zinc-400 font-medium">Issue Summary</span>
+                                <input type="text" placeholder="e.g., Damaged bridge railing" class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-200 focus:outline-none focus:border-zinc-700" />
+                            </label>
+                            <label class="block space-y-1.5">
+                                <span class="text-xs text-zinc-400 font-medium">Target Department</span>
+                                <select class="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-sm text-zinc-300 focus:outline-none focus:border-zinc-700">
+                                    <option>National Water & Sewerage</option>
+                                    <option>Power & Electricity Distribution</option>
+                                    <option>Roads & Highways Authority</option>
+                                    <option>Unallocated / General Council</option>
+                                </select>
+                            </label>
+                            <div class="border-2 border-dashed border-zinc-800 rounded-xl p-6 text-center hover:bg-zinc-900/20 transition-colors cursor-pointer">
+                                <span class="text-xs text-zinc-500 block">Attach Media Verification (Photo/Video)</span>
+                            </div>
+                            <button id="submit-ticket-btn" class="w-full bg-zinc-100 hover:bg-white text-zinc-950 font-medium rounded-xl py-3 text-sm shadow-lg shadow-white/5 transition-all mt-4">
+                                Dispatch Verified Ticket
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('submit-ticket-btn').addEventListener('click', () => {
+                    currentView = 'feed';
+                    render();
+                });
+            }
+        }
+
+        // Event Listeners
+        navFeed.addEventListener('click', () => {
+            currentView = 'feed';
+            render();
+        });
+
+        navReport.addEventListener('click', () => {
+            currentView = 'report';
+            render();
+        });
+
+        // Initial Run
+        render();
     </script>
 </body>
 </html>
-
-
